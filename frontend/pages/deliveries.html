@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Deliveries | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link active">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Deliveries</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="form-card">
+          <form id="deliveryForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Product</label>
+                <select id="product" required>
+                  <option value="">Select Product</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tank</label>
+                <select id="tank" required>
+                  <option value="">Select Tank</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Supplier</label>
+                <select id="supplier" required>
+                  <option value="">Select Supplier</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Quantity (L)</label><input type="number" id="quantity" required></div>
+            </div>
+            <div class="form-group"><label>Cost Per Litre (₦)</label><input type="number" id="costPerLitre" required></div>
+            <button type="submit" class="btn btn-primary">Save Delivery</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    // Load products, tanks, and suppliers
+    async function loadData() {
+      try {
+        console.log('Loading delivery form data...');
+        const [productsRes, tanksRes, suppliersRes] = await Promise.all([
+          fetch('http://localhost:5000/api/inventory/products', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('http://localhost:5000/api/inventory/tanks', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('http://localhost:5000/api/inventory/suppliers', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        console.log('API responses:', { products: productsRes.status, tanks: tanksRes.status, suppliers: suppliersRes.status });
+
+        if (productsRes.ok) {
+          const products = await productsRes.json();
+          console.log('Products loaded:', products.data);
+          const productSelect = document.getElementById('product');
+          products.data.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p._id;
+            option.textContent = p.name + ' (' + p.code + ') - ₦' + p.costPrice + '/L';
+            productSelect.appendChild(option);
+          });
+        } else {
+          console.error('Failed to load products:', productsRes.status);
+        }
+
+        if (tanksRes.ok) {
+          const tanks = await tanksRes.json();
+          console.log('Tanks loaded:', tanks.data);
+          const tankSelect = document.getElementById('tank');
+          tanks.data.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t._id;
+            option.textContent = t.name + ' (' + t.currentStock + 'L / ' + t.capacity + 'L)';
+            tankSelect.appendChild(option);
+          });
+        } else {
+          console.error('Failed to load tanks:', tanksRes.status);
+        }
+
+        if (suppliersRes.ok) {
+          const suppliers = await suppliersRes.json();
+          console.log('Suppliers loaded:', suppliers.data);
+          const supplierSelect = document.getElementById('supplier');
+          suppliers.data.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s._id;
+            option.textContent = s.name;
+            supplierSelect.appendChild(option);
+          });
+        } else {
+          console.error('Failed to load suppliers:', suppliersRes.status);
+        }
+      } catch (err) {
+        console.error('Error loading data:', err);
+        alert('Error loading form data: ' + err.message);
+      }
+    }
+
+    loadData();
+
+    document.getElementById('deliveryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        product: document.getElementById('product').value,
+        tank: document.getElementById('tank').value,
+        supplier: document.getElementById('supplier').value,
+        quantityReceived: parseFloat(document.getElementById('quantity').value),
+        costPerLitre: parseFloat(document.getElementById('costPerLitre').value)
+      };
+
+      if (!payload.product || !payload.tank || !payload.supplier) {
+        alert('Please select all required fields');
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/deliveries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) { 
+          alert('Delivery recorded!'); 
+          e.target.reset();
+          loadData();
+        } else {
+          alert('Error: ' + (data.message || 'Failed to save delivery'));
+        }
+      } catch (err) { 
+        console.error(err);
+        alert('Error: ' + err.message); 
+      }
+    });
+  </script>
+</body>
+</html>

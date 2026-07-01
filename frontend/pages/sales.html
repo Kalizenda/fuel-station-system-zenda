@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Sales | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link active">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Sales</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="form-card">
+          <form id="salesForm">
+            <div class="form-group">
+              <label>Pump</label>
+              <select id="pump" required>
+                <option value="">Select Pump</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Opening Reading (Litres)</label>
+                <input type="number" id="openingReading" required step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Closing Reading (Litres)</label>
+                <input type="number" id="closingReading" required step="0.01">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Payment Method</label>
+              <select id="paymentMethod" required>
+                <option value="Cash">Cash</option>
+                <option value="Transfer">Transfer</option>
+                <option value="Card">Card</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Litres Sold</label>
+              <input type="number" id="litresSold" readonly style="background-color: #f0f0f0;">
+            </div>
+            <div class="form-group">
+              <label>Estimated Revenue (₦)</label>
+              <input type="number" id="estimatedRevenue" readonly style="background-color: #f0f0f0;">
+            </div>
+            <button type="submit" class="btn btn-primary">Record Sale</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    // Load pumps
+    async function loadPumps() {
+      try {
+        console.log('Loading pumps...');
+        const res = await fetch('http://localhost:5000/api/inventory/pumps', { 
+          headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        console.log('Pumps response status:', res.status);
+        if (res.ok) {
+          const pumps = await res.json();
+          console.log('Pumps data:', pumps.data);
+          const pumpSelect = document.getElementById('pump');
+          pumps.data.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p._id;
+            option.textContent = `${p.pumpNumber} (${p.product?.name || 'N/A'}) - ₦${p.product?.sellingPrice || 0}/L`;
+            option.dataset.productId = p.product?._id;
+            option.dataset.sellingPrice = p.product?.sellingPrice || 0;
+            pumpSelect.appendChild(option);
+          });
+          console.log('Pumps loaded:', pumps.data.length, 'pumps');
+        } else {
+          console.error('Failed to load pumps:', res.status);
+          alert('Failed to load pumps');
+        }
+      } catch (err) {
+        console.error('Error loading pumps:', err);
+        alert('Error loading pumps');
+      }
+    }
+
+    loadPumps();
+
+    // Calculate litres sold and revenue
+    document.getElementById('openingReading').addEventListener('input', calculateSale);
+    document.getElementById('closingReading').addEventListener('input', calculateSale);
+    document.getElementById('pump').addEventListener('change', calculateSale);
+
+    function calculateSale() {
+      const opening = parseFloat(document.getElementById('openingReading').value) || 0;
+      const closing = parseFloat(document.getElementById('closingReading').value) || 0;
+      const pumpSelect = document.getElementById('pump');
+      const selectedOption = pumpSelect.options[pumpSelect.selectedIndex];
+      
+      console.log('CalculateSale called:', { opening, closing, selectedOption: selectedOption?.value });
+      
+      // Only calculate if a valid pump is selected (not the default "Select Pump" option)
+      if (!selectedOption || !selectedOption.value || selectedOption.value === "") {
+        document.getElementById('litresSold').value = '';
+        document.getElementById('estimatedRevenue').value = '';
+        return;
+      }
+      
+      const sellingPrice = parseFloat(selectedOption.dataset.sellingPrice) || 0;
+      console.log('Selling price:', sellingPrice);
+
+      if (closing > opening && sellingPrice > 0) {
+        const litres = closing - opening;
+        const revenue = litres * sellingPrice;
+        document.getElementById('litresSold').value = litres.toFixed(2);
+        document.getElementById('estimatedRevenue').value = revenue.toFixed(2);
+        console.log('Calculated:', { litres, revenue });
+      } else {
+        document.getElementById('litresSold').value = '';
+        document.getElementById('estimatedRevenue').value = '';
+        console.log('Calculation skipped - conditions not met');
+      }
+    }
+
+    document.getElementById('salesForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const opening = parseFloat(document.getElementById('openingReading').value);
+      const closing = parseFloat(document.getElementById('closingReading').value);
+      
+      if (closing <= opening) {
+        alert('Closing reading must be greater than opening reading');
+        return;
+      }
+
+      const payload = {
+        pump: document.getElementById('pump').value,
+        openingReading: opening,
+        closingReading: closing,
+        paymentMethod: document.getElementById('paymentMethod').value
+      };
+
+      try {
+        const res = await fetch('http://localhost:5000/api/sales', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) { 
+          alert(`Sale recorded! Revenue: ₦${data.data.totalRevenue.toFixed(2)}`); 
+          e.target.reset();
+          document.getElementById('litresSold').value = '';
+          document.getElementById('estimatedRevenue').value = '';
+        } else {
+          alert('Error: ' + (data.message || 'Failed to record sale'));
+        }
+      } catch (err) { 
+        console.error(err);
+        alert('Error: ' + err.message); 
+      }
+    });
+  </script>
+</body>
+</html>

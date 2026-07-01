@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link active">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+      <button id="logoutBtn" class="btn" style="margin-top:2rem;">Logout</button>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Dashboard</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <div class="card">
+          <h3>Today's Overview</h3>
+          <div id="dashboardMetrics">
+            <p>Loading dashboard data...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Tank Status</h3>
+          <div id="tankStatus">
+            <p>Loading tank status...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Recent Sales</h3>
+          <div id="recentSales">
+            <p>Loading recent sales...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const token = localStorage.getItem('token');
+    document.getElementById('userName').textContent = user.fullName || 'User';
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = '../index.html';
+    });
+
+    async function loadDashboardMetrics() {
+      try {
+        const res = await fetch('http://localhost:5000/api/finance/profit', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('dashboardMetrics').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              <div class="stat-card">
+                <h4>Revenue</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${data.data.totalRevenue.toLocaleString()}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Expenses</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${data.data.totalExpenses.toLocaleString()}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Net Profit</h4>
+                <p style="font-size: 1.5rem; font-weight: bold; color: ${data.data.netProfit >= 0 ? 'var(--accent-success)' : 'var(--accent-danger)'};">₦${data.data.netProfit.toLocaleString()}</p>
+              </div>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading dashboard metrics:', err);
+        document.getElementById('dashboardMetrics').innerHTML = '<p>Error loading metrics</p>';
+      }
+    }
+
+    async function loadTankStatus() {
+      try {
+        const res = await fetch('http://localhost:5000/api/tanks/levels', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('tankStatus').innerHTML = data.data.map(tank => `
+            <div class="tank-status-item" style="margin: 0.5rem 0; padding: 0.5rem; border-radius: 4px;">
+              <strong>${tank.name}</strong>: ${tank.percentage}% (${tank.currentStock.toLocaleString()}L / ${tank.capacity.toLocaleString()}L)
+              <div class="progress-bar" style="height: 10px; border-radius: 5px; margin-top: 5px;">
+                <div style="background: ${tank.levelStatus === 'Critical' ? 'var(--accent-danger)' : tank.levelStatus === 'Low' ? 'var(--accent-warning)' : 'var(--accent-success)'}; height: 100%; width: ${tank.percentage}%; border-radius: 5px;"></div>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        console.error('Error loading tank status:', err);
+        document.getElementById('tankStatus').innerHTML = '<p>Error loading tank status</p>';
+      }
+    }
+
+    async function loadRecentSales() {
+      try {
+        const res = await fetch('http://localhost:5000/api/sales/today', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.data && data.data.length > 0) {
+          document.getElementById('recentSales').innerHTML = `
+            <table class="data-table">
+              <thead><tr><th>Time</th><th>Pump</th><th>Litres</th><th>Revenue</th></tr></thead>
+              <tbody>
+                ${data.data.slice(0, 5).map(sale => `
+                  <tr>
+                    <td>${new Date(sale.date).toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: 'numeric', minute: '2-digit', hour12: true })}</td>
+                    <td>Pump ${sale.pump?.pumpNumber || 'N/A'}</td>
+                    <td>${sale.litresSold.toFixed(2)}L</td>
+                    <td>₦${sale.totalRevenue.toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } else {
+          document.getElementById('recentSales').innerHTML = '<p>No sales today</p>';
+        }
+      } catch (err) {
+        console.error('Error loading recent sales:', err);
+        document.getElementById('recentSales').innerHTML = '<p>Error loading recent sales</p>';
+      }
+    }
+
+    // Load all dashboard data
+    loadDashboardMetrics();
+    loadTankStatus();
+    loadRecentSales();
+
+    // Refresh data every 30 seconds
+    setInterval(() => {
+      loadDashboardMetrics();
+      loadTankStatus();
+      loadRecentSales();
+    }, 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Price Management | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link active">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Price Management</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="card">
+          <h3>Current Product Prices</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Code</th>
+                <th>Cost Price (₦)</th>
+                <th>Selling Price (₦)</th>
+                <th>Margin (₦)</th>
+                <th>Margin (%)</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="priceTable"><tr><td colspan="7">Loading...</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="form-card">
+          <h3>Update Product Price</h3>
+          <form id="priceForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Select Product</label>
+                <select id="productSelect" required>
+                  <option value="">Select Product</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>New Cost Price (₦)</label>
+                <input type="number" id="costPrice" required step="0.01">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>New Selling Price (₦)</label>
+              <input type="number" id="sellingPrice" required step="0.01">
+            </div>
+            <button type="submit" class="btn btn-primary">Update Price</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function loadPrices() {
+      try {
+        const res = await fetch('http://localhost:5000/api/prices', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const tbody = document.getElementById('priceTable');
+        
+        if (data.data && data.data.length > 0) {
+          tbody.innerHTML = data.data.map(p => {
+            const margin = p.sellingPrice - p.costPrice;
+            const marginPercent = ((margin / p.costPrice) * 100).toFixed(1);
+            return `
+              <tr>
+                <td>${p.name}</td>
+                <td>${p.code}</td>
+                <td>₦${p.costPrice.toLocaleString()}</td>
+                <td>₦${p.sellingPrice.toLocaleString()}</td>
+                <td>₦${margin.toLocaleString()}</td>
+                <td>${marginPercent}%</td>
+                <td>
+                  <button onclick="editPrice('${p._id}', ${p.costPrice}, ${p.sellingPrice})" class="btn btn-sm">Edit</button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+          
+          // Populate product select
+          const productOptions = data.data.map(p => `<option value="${p._id}">${p.name} (${p.code}) - Cost: ₦${p.costPrice}, Sell: ₦${p.sellingPrice}</option>`).join('');
+          document.getElementById('productSelect').innerHTML = '<option value="">Select Product</option>' + productOptions;
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7">No products found</td></tr>';
+        }
+      } catch (err) {
+        console.error('Error loading prices:', err);
+        document.getElementById('priceTable').innerHTML = '<tr><td colspan="7">Error loading prices</td></tr>';
+      }
+    }
+
+    function editPrice(productId, costPrice, sellingPrice) {
+      document.getElementById('productSelect').value = productId;
+      document.getElementById('costPrice').value = costPrice;
+      document.getElementById('sellingPrice').value = sellingPrice;
+    }
+
+    document.getElementById('priceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        productId: document.getElementById('productSelect').value,
+        costPrice: parseFloat(document.getElementById('costPrice').value),
+        sellingPrice: parseFloat(document.getElementById('sellingPrice').value)
+      };
+
+      try {
+        const res = await fetch('http://localhost:5000/api/prices/update', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('Price updated successfully!');
+          e.target.reset();
+          loadPrices();
+        } else {
+          alert('Error: ' + (data.message || 'Failed to update price'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      }
+    });
+
+    loadPrices();
+  </script>
+</body>
+</html>

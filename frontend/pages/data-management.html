@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Management - AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .data-management-container {
+      padding: 2.5rem;
+    }
+    .data-management-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+    .data-management-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .data-filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+    .data-filters label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+    .data-filters select,
+    .data-filters input {
+      width: 100%;
+      padding: 0.8rem;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+    }
+    .data-filters select:focus,
+    .data-filters input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .data-table th,
+    .data-table td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .data-table th {
+      background: var(--bg-tertiary);
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .data-table tr:hover {
+      background: var(--bg-tertiary);
+    }
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+    .status-badge {
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .status-active {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10B981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .status-deleted {
+      background: rgba(239, 68, 68, 0.15);
+      color: #EF4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .status-locked {
+      background: rgba(245, 158, 11, 0.15);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .action-buttons button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
+    }
+    .action-buttons button:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    .btn-restore {
+      background: var(--gradient-success);
+      color: white;
+    }
+    .btn-delete {
+      background: var(--gradient-danger);
+      color: white;
+    }
+    .btn-lock {
+      background: var(--gradient-warning);
+      color: white;
+    }
+    .btn-unlock {
+      background: var(--gradient-primary);
+      color: white;
+    }
+    .btn-export {
+      background: var(--gradient-primary);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      font-weight: 600;
+      box-shadow: var(--shadow-md);
+    }
+    .btn-export:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    .pagination {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 2rem;
+      justify-content: center;
+    }
+    .pagination button {
+      padding: 0.6rem 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+    .pagination button:hover {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+    .pagination button.active {
+      background: var(--gradient-primary);
+      color: white;
+      border-color: transparent;
+      box-shadow: var(--shadow-md);
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+    .modal {
+      background: var(--bg-secondary);
+      padding: 2rem;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: var(--shadow-xl);
+      border: 1px solid var(--border-color);
+    }
+    .modal h2 {
+      margin-bottom: 1.5rem;
+      color: var(--text-primary);
+      font-size: 1.5rem;
+    }
+    .modal textarea {
+      width: 100%;
+      padding: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      resize: vertical;
+      min-height: 100px;
+      transition: all 0.3s ease;
+    }
+    .modal textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .modal-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+    }
+    .modal-actions button {
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    .modal-actions .btn-confirm {
+      background: var(--gradient-primary);
+      color: white;
+    }
+    .modal-actions .btn-cancel {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+    }
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+    .loading::after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">Dashboard</a>
+        <a href="sales.html" class="nav-link">Sales</a>
+        <a href="deliveries.html" class="nav-link">Deliveries</a>
+        <a href="customers.html" class="nav-link">Customers</a>
+        <a href="tanks.html" class="nav-link">Tanks</a>
+        <a href="prices.html" class="nav-link">Prices</a>
+        <a href="profit.html" class="nav-link">Profit</a>
+        <a href="staff.html" class="nav-link">Staff</a>
+        <a href="pump-assignment.html" class="nav-link">Pump Assignment</a>
+        <a href="reports.html" class="nav-link">Reports</a>
+        <a href="analytics.html" class="nav-link">Analytics</a>
+        <a href="admin.html" class="nav-link">Admin</a>
+        <a href="data-management.html" class="nav-link active">Data Management</a>
+      </nav>
+    </div>
+
+    <div class="main-content">
+      <div class="top-bar">
+        <h2>Data Management</h2>
+        <div class="user-info">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName"></span>
+          <button onclick="logout()" class="btn btn-secondary" style="width: auto; padding: 0.5rem 1rem;">Logout</button>
+        </div>
+      </div>
+      <div class="content-area">
+        <div class="data-management-container">
+          <div class="data-management-header">
+            <h1>Data Management</h1>
+            <button onclick="exportData()" class="btn-export">Export Data</button>
+          </div>
+
+      <div class="data-filters">
+        <div>
+          <label for="entityType">Entity Type:</label>
+          <select id="entityType" onchange="loadData()">
+            <option value="sales">Sales</option>
+            <option value="deliveries">Deliveries</option>
+            <option value="expenses">Expenses</option>
+            <option value="activityLogs">Activity Logs</option>
+            <option value="profitLoss">Profit/Loss</option>
+            <option value="dailySummaries">Daily Summaries</option>
+          </select>
+        </div>
+        <div>
+          <label for="status">Status:</label>
+          <select id="status" onchange="loadData()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="deleted">Deleted</option>
+            <option value="locked">Locked</option>
+          </select>
+        </div>
+        <div>
+          <label for="search">Search:</label>
+          <input type="text" id="search" placeholder="Search..." onkeyup="loadData()">
+        </div>
+      </div>
+
+      <div id="dataContent">
+        <p>Loading data...</p>
+      </div>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Reason Modal -->
+  <div class="modal-overlay" id="reasonModal" style="display: none;">
+    <div class="modal">
+      <h2 id="modalTitle">Provide Reason</h2>
+      <textarea id="reasonText" placeholder="Enter reason for this action..."></textarea>
+      <div class="modal-actions">
+        <button onclick="closeModal()" class="btn-cancel">Cancel</button>
+        <button onclick="confirmAction()" class="btn-confirm">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    let currentPage = 1;
+    let currentAction = null;
+    let currentEntityId = null;
+    let currentEntityType = null;
+
+    // Display user name if available
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.fullName) {
+      document.getElementById('userName').textContent = user.fullName;
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '../index.html';
+    }
+
+    async function loadData() {
+      try {
+        const entityType = document.getElementById('entityType').value;
+        const status = document.getElementById('status').value;
+        const search = document.getElementById('search').value;
+
+        const params = new URLSearchParams({
+          page: currentPage,
+          limit: 20
+        });
+
+        if (entityType) params.append('dataType', entityType);
+        if (status) params.append('isDeleted', status === 'deleted' ? 'true' : 'false');
+        if (search) params.append('search', search);
+
+        const res = await fetch(`http://localhost:5000/api/data-management/data?${params}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          document.getElementById('dataContent').innerHTML = `<p style="color: red;">Error: Failed to load data</p>`;
+          return;
+        }
+
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+          renderData(data.data);
+          renderPagination(data.pagination);
+        } else {
+          document.getElementById('dataContent').innerHTML = '<p>No data available</p>';
+        }
+      } catch (err) {
+        console.error('Error loading data:', err);
+        document.getElementById('dataContent').innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      }
+    }
+
+    function renderData(items) {
+      if (!items || items.length === 0) {
+        document.getElementById('dataContent').innerHTML = '<p>No data available</p>';
+        return;
+      }
+
+      let html = '<table class="data-table"><thead><tr>';
+      
+      // Get headers from first item
+      const headers = Object.keys(items[0]).filter(key => key !== '_id' && key !== '__v' && key !== 'createdAt' && key !== 'updatedAt');
+      headers.forEach(header => {
+        html += `<th>${header}</th>`;
+      });
+      html += '<th>Actions</th></tr></thead><tbody>';
+
+      items.forEach(item => {
+        html += '<tr>';
+        headers.forEach(header => {
+          const value = item[header];
+          if (header === 'isDeleted') {
+            html += `<td><span class="status-badge ${value ? 'status-deleted' : 'status-active'}">${value ? 'Deleted' : 'Active'}</span></td>`;
+          } else if (header === 'isLocked') {
+            html += `<td><span class="status-badge ${value ? 'status-locked' : 'status-active'}">${value ? 'Locked' : 'Unlocked'}</span></td>`;
+          } else if (typeof value === 'object' && value !== null) {
+            // Handle populated fields - show relevant info
+            if (value.name) {
+              html += `<td>${value.name}</td>`;
+            } else if (value.fullName) {
+              html += `<td>${value.fullName}</td>`;
+            } else if (value.pumpNumber) {
+              html += `<td>Pump ${value.pumpNumber}</td>`;
+            } else if (value.productName) {
+              html += `<td>${value.productName}</td>`;
+            } else {
+              html += `<td>${JSON.stringify(value)}</td>`;
+            }
+          } else if (header.toLowerCase().includes('date') || header.toLowerCase().includes('time') || header.toLowerCase().includes('timestamp') || header.toLowerCase().includes('at') || header.toLowerCase().includes('on')) {
+            // Format date fields
+            if (value && (typeof value === 'string' || value instanceof Date)) {
+              const dateObj = new Date(value);
+              if (!isNaN(dateObj)) {
+                html += `<td>${dateObj.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</td>`;
+              } else {
+                html += `<td>${value}</td>`;
+              }
+            } else {
+              html += `<td>${value !== null && value !== undefined ? value : 'N/A'}</td>`;
+            }
+          } else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+            // Detect ISO date-time strings
+            const dateObj = new Date(value);
+            if (!isNaN(dateObj)) {
+              html += `<td>${dateObj.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</td>`;
+            } else {
+              html += `<td>${value}</td>`;
+            }
+          } else if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Detect ISO date strings (YYYY-MM-DD)
+            const dateObj = new Date(value);
+            if (!isNaN(dateObj)) {
+              html += `<td>${dateObj.toLocaleDateString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'short', day: 'numeric' })}</td>`;
+            } else {
+              html += `<td>${value}</td>`;
+            }
+          } else {
+            html += `<td>${value !== null && value !== undefined ? value : 'N/A'}</td>`;
+          }
+        });
+        
+        html += '<td class="action-buttons">';
+        if (item.isDeleted) {
+          html += `<button class="btn-restore" onclick="restoreData('${item._id}', '${item.entityType || 'UNKNOWN'}')">Restore</button>`;
+          html += `<button class="btn-delete" onclick="permanentDeleteData('${item._id}', '${item.entityType || 'UNKNOWN'}')">Permanent Delete</button>`;
+        } else {
+          if (item.isLocked) {
+            html += `<button class="btn-unlock" onclick="unlockData('${item._id}', '${item.entityType || 'UNKNOWN'}')">Unlock</button>`;
+          } else {
+            html += `<button class="btn-lock" onclick="lockData('${item._id}', '${item.entityType || 'UNKNOWN'}')">Lock</button>`;
+          }
+          html += `<button class="btn-delete" onclick="softDeleteData('${item._id}', '${item.entityType || 'UNKNOWN'}')">Soft Delete</button>`;
+        }
+        html += '</td></tr>';
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('dataContent').innerHTML = html;
+    }
+
+    function renderPagination(pagination) {
+      if (!pagination) return;
+      
+      const totalPages = pagination.totalPages || 1;
+      let html = '';
+      
+      for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+      }
+      
+      document.getElementById('pagination').innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = page;
+      loadData();
+    }
+
+    function openModal(action, entityId, entityType) {
+      currentAction = action;
+      currentEntityId = entityId;
+      currentEntityType = entityType;
+      
+      const titles = {
+        softDelete: 'Soft Delete - Provide Reason',
+        permanentDelete: 'Permanent Delete - Provide Reason',
+        lock: 'Lock Record - Provide Reason',
+        unlock: 'Unlock Record - Provide Reason',
+        restore: 'Restore Record - Provide Reason'
+      };
+      
+      document.getElementById('modalTitle').textContent = titles[action] || 'Provide Reason';
+      document.getElementById('reasonModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('reasonModal').style.display = 'none';
+      document.getElementById('reasonText').value = '';
+      currentAction = null;
+      currentEntityId = null;
+      currentEntityType = null;
+    }
+
+    async function confirmAction() {
+      const reason = document.getElementById('reasonText').value;
+      
+      if (!reason) {
+        alert('Please provide a reason');
+        return;
+      }
+
+      try {
+        let url, method;
+        
+        switch (currentAction) {
+          case 'softDelete':
+            url = 'http://localhost:5000/api/data-management/soft-delete';
+            method = 'POST';
+            break;
+          case 'permanentDelete':
+            url = 'http://localhost:5000/api/data-management/permanent-delete';
+            method = 'DELETE';
+            break;
+          case 'lock':
+            url = 'http://localhost:5000/api/data-management/lock';
+            method = 'POST';
+            break;
+          case 'unlock':
+            url = 'http://localhost:5000/api/data-management/unlock';
+            method = 'POST';
+            break;
+          case 'restore':
+            url = 'http://localhost:5000/api/data-management/restore';
+            method = 'POST';
+            break;
+        }
+
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            entityId: currentEntityId,
+            entityType: currentEntityType,
+            reason
+          })
+        });
+
+        const data = await res.json();
+        
+        if (data.success) {
+          alert('Action completed successfully');
+          closeModal();
+          loadData();
+        } else {
+          alert('Error: ' + (data.message || 'Action failed'));
+        }
+      } catch (err) {
+        console.error('Error performing action:', err);
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function softDeleteData(entityId, entityType) {
+      openModal('softDelete', entityId, entityType);
+    }
+
+    function permanentDeleteData(entityId, entityType) {
+      openModal('permanentDelete', entityId, entityType);
+    }
+
+    function lockData(entityId, entityType) {
+      openModal('lock', entityId, entityType);
+    }
+
+    function unlockData(entityId, entityType) {
+      openModal('unlock', entityId, entityType);
+    }
+
+    function restoreData(entityId, entityType) {
+      openModal('restore', entityId, entityType);
+    }
+
+    async function exportData() {
+      try {
+        const entityType = document.getElementById('entityType').value;
+        const status = document.getElementById('status').value;
+        
+        const params = new URLSearchParams();
+        if (entityType) params.append('dataType', entityType);
+        if (status) params.append('isDeleted', status === 'deleted' ? 'true' : 'false');
+
+        const res = await fetch(`http://localhost:5000/api/data-management/export?${params}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          alert('Error: Failed to export data');
+          return;
+        }
+
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `data-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        console.error('Error exporting data:', err);
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Load data on page load
+    loadData();
+  </script>
+</body>
+</html>

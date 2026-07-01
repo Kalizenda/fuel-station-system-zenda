@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Tank Monitoring | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link active">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Tank Level Monitoring</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="card">
+          <h3>Tank Levels</h3>
+          <div id="tankLevels">
+            <p>Loading tank levels...</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3>Record Dip Reading</h3>
+          <form id="dipForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Select Tank</label>
+                <select id="tankSelect" required>
+                  <option value="">Select Tank</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Dip Reading (Litres)</label>
+                <input type="number" id="dipReading" required step="0.01">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Record Dip</button>
+          </form>
+        </div>
+
+        <div class="form-card">
+          <h3>Update Tank Thresholds</h3>
+          <form id="thresholdForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Select Tank</label>
+                <select id="thresholdTankSelect" required>
+                  <option value="">Select Tank</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Min Stock Level (Litres)</label>
+                <input type="number" id="minStockLevel" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Max Stock Level (Litres)</label>
+              <input type="number" id="maxStockLevel">
+            </div>
+            <button type="submit" class="btn btn-primary">Update Thresholds</button>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function loadTankLevels() {
+      try {
+        console.log('Loading tank levels...');
+        const res = await fetch('http://localhost:5000/api/tanks/levels', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        console.log('Tank levels response:', data);
+        const container = document.getElementById('tankLevels');
+        
+        if (data.data && data.data.length > 0) {
+          console.log('Rendering', data.data.length, 'tanks');
+          container.innerHTML = data.data.map(tank => `
+            <div class="tank-card" style="border: 1px solid var(--border-color); padding: 1rem; margin: 0.5rem 0; border-radius: 4px; background: var(--bg-secondary);">
+              <h4>${tank.name} (${tank.product?.name || 'N/A'})</h4>
+              <div class="progress-bar" style="height: 20px; border-radius: 10px; margin: 10px 0; overflow: hidden;">
+                <div style="background: ${tank.levelStatus === 'Critical' ? 'var(--accent-danger)' : tank.levelStatus === 'Low' ? 'var(--accent-warning)' : tank.levelStatus === 'High' ? 'var(--accent-primary)' : 'var(--accent-success)'}; height: 100%; width: ${tank.percentage}%; transition: width 0.3s;"></div>
+              </div>
+              <p><strong>Level:</strong> ${tank.currentStock.toLocaleString()}L / ${tank.capacity.toLocaleString()}L (${tank.percentage}%)</p>
+              <p><strong>Status:</strong> <span class="status-${tank.levelStatus.toLowerCase()}">${tank.levelStatus}</span></p>
+              <p><strong>Last Dip:</strong> ${tank.lastDipReading ? tank.lastDipReading.toLocaleString() + 'L' : 'N/A'} (${tank.lastDipDate ? new Date(tank.lastDipDate).toLocaleDateString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'})</p>
+              ${tank.needsAttention ? '<p style="color: var(--accent-danger); font-weight: bold;">⚠️ Needs Attention</p>' : ''}
+            </div>
+          `).join('');
+          
+          // Populate tank selects
+          const tankOptions = data.data.map(t => `<option value="${t._id}">${t.name} (${t.currentStock}L / ${t.capacity}L)</option>`).join('');
+          document.getElementById('tankSelect').innerHTML = '<option value="">Select Tank</option>' + tankOptions;
+          document.getElementById('thresholdTankSelect').innerHTML = '<option value="">Select Tank</option>' + tankOptions;
+        } else {
+          console.log('No tanks found in response');
+          container.innerHTML = '<p>No tanks found</p>';
+        }
+      } catch (err) {
+        console.error('Error loading tank levels:', err);
+        document.getElementById('tankLevels').innerHTML = '<p>Error loading tank levels</p>';
+      }
+    }
+
+    document.getElementById('dipForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        tankId: document.getElementById('tankSelect').value,
+        dipReading: parseFloat(document.getElementById('dipReading').value)
+      };
+
+      try {
+        const res = await fetch('http://localhost:5000/api/tanks/dip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('Dip reading recorded successfully!');
+          e.target.reset();
+          loadTankLevels();
+        } else {
+          alert('Error: ' + (data.message || 'Failed to record dip'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      }
+    });
+
+    document.getElementById('thresholdForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        tankId: document.getElementById('thresholdTankSelect').value,
+        minStockLevel: parseFloat(document.getElementById('minStockLevel').value),
+        maxStockLevel: parseFloat(document.getElementById('maxStockLevel').value) || null
+      };
+
+      try {
+        const res = await fetch('http://localhost:5000/api/tanks/thresholds', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('Thresholds updated successfully!');
+          e.target.reset();
+          loadTankLevels();
+        } else {
+          alert('Error: ' + (data.message || 'Failed to update thresholds'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      }
+    });
+
+    loadTankLevels();
+    setInterval(loadTankLevels, 30000); // Refresh every 30 seconds
+  </script>
+</body>
+</html>

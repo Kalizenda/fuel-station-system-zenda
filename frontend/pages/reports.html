@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Reports | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link active">📄 Reports</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Comprehensive Reports</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="card">
+          <h3>Sales Reports with Pump-Level Gains</h3>
+          <div class="form-group">
+            <label>Date Range</label>
+            <input type="date" id="salesStartDate" style="margin:0.5rem;">
+            <input type="date" id="salesEndDate" style="margin:0.5rem;">
+          </div>
+          <button onclick="generateSalesReport('json')" class="btn btn-primary" style="margin:0.5rem;">View Report</button>
+          <button onclick="generateSalesReport('csv')" class="btn btn-primary" style="margin:0.5rem;">Export CSV</button>
+          <button onclick="generateSalesReport('excel')" class="btn btn-primary" style="margin:0.5rem;">Export Excel</button>
+        </div>
+
+        <div class="card">
+          <h3>Profit/Loss Analytics</h3>
+          <div class="form-group">
+            <label>Period</label>
+            <select id="profitPeriod" style="margin:0.5rem;">
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
+              <option value="CUMULATIVE">Cumulative</option>
+            </select>
+          </div>
+          <button onclick="generateProfitLossReport()" class="btn btn-primary" style="margin:0.5rem;">Generate Report</button>
+          <button onclick="generateDailyProfitLoss()" class="btn btn-primary" style="margin:0.5rem;">Generate Daily P&L</button>
+        </div>
+
+        <div class="card">
+          <h3>Pump Performance with Gains</h3>
+          <div class="form-group">
+            <label>Date Range</label>
+            <input type="date" id="pumpStartDate" style="margin:0.5rem;">
+            <input type="date" id="pumpEndDate" style="margin:0.5rem;">
+          </div>
+          <button onclick="getPumpPerformance()" class="btn btn-primary" style="margin:0.5rem;">View Performance</button>
+        </div>
+
+        <div class="card">
+          <h3>Activity Report</h3>
+          <div class="form-group">
+            <label>Date Range</label>
+            <input type="date" id="activityStartDate" style="margin:0.5rem;">
+            <input type="date" id="activityEndDate" style="margin:0.5rem;">
+          </div>
+          <button onclick="generateActivityReport()" class="btn btn-primary" style="margin:0.5rem;">Generate Report</button>
+        </div>
+
+        <div class="card">
+          <h3>Inventory Report</h3>
+          <button onclick="generateInventoryReport()" class="btn btn-primary" style="margin:0.5rem;">Generate Report</button>
+        </div>
+
+        <div class="card">
+          <h3>Executive Summary</h3>
+          <div class="form-group">
+            <label>Period</label>
+            <select id="executivePeriod" style="margin:0.5rem;">
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
+            </select>
+          </div>
+          <button onclick="generateExecutiveSummary()" class="btn btn-primary" style="margin:0.5rem;">Generate Summary</button>
+        </div>
+
+        <div class="card" id="reportResults" style="display:none;">
+          <h3>Report Results</h3>
+          <div id="reportContent"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function generateSalesReport(format) {
+      const startDate = document.getElementById('salesStartDate').value;
+      const endDate = document.getElementById('salesEndDate').value;
+      
+      try {
+        const url = new URL('http://localhost:5000/api/comprehensive-reports/sales');
+        if (startDate) url.searchParams.append('startDate', startDate);
+        if (endDate) url.searchParams.append('endDate', endDate);
+        url.searchParams.append('format', format);
+        
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (format === 'csv' || format === 'excel') {
+          const blob = await res.blob();
+          const downloadUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = `sales-report-${format}.${format === 'excel' ? 'xlsx' : 'csv'}`;
+          a.click();
+          URL.revokeObjectURL(downloadUrl);
+        } else {
+          const data = await res.json();
+          displayReportResults(data);
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function generateProfitLossReport() {
+      const period = document.getElementById('profitPeriod').value;
+      
+      try {
+        const res = await fetch(`http://localhost:5000/api/profit-loss/summary?period=${period}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        displayReportResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function generateDailyProfitLoss() {
+      try {
+        const res = await fetch('http://localhost:5000/api/profit-loss/generate-daily', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        displayReportResults(data);
+        alert('Daily profit/loss generated successfully!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function getPumpPerformance() {
+      const startDate = document.getElementById('pumpStartDate').value;
+      const endDate = document.getElementById('pumpEndDate').value;
+      
+      try {
+        const url = new URL('http://localhost:5000/api/profit-loss/pump-performance');
+        if (startDate) url.searchParams.append('startDate', startDate);
+        if (endDate) url.searchParams.append('endDate', endDate);
+        
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        displayReportResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function generateActivityReport() {
+      const startDate = document.getElementById('activityStartDate').value;
+      const endDate = document.getElementById('activityEndDate').value;
+      
+      try {
+        const url = new URL('http://localhost:5000/api/comprehensive-reports/activity');
+        if (startDate) url.searchParams.append('startDate', startDate);
+        if (endDate) url.searchParams.append('endDate', endDate);
+        
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        displayReportResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function generateInventoryReport() {
+      try {
+        const res = await fetch('http://localhost:5000/api/comprehensive-reports/inventory', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        displayReportResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function generateExecutiveSummary() {
+      const period = document.getElementById('executivePeriod').value;
+      
+      try {
+        const res = await fetch(`http://localhost:5000/api/comprehensive-reports/executive-summary?period=${period}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        displayReportResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function displayReportResults(data) {
+      const resultsDiv = document.getElementById('reportResults');
+      const contentDiv = document.getElementById('reportContent');
+      
+      resultsDiv.style.display = 'block';
+      
+      if (!data || !data.success) {
+        contentDiv.innerHTML = '<p style="color: var(--accent-danger);">Error: ' + (data?.message || 'Failed to generate report') + '</p>';
+        return;
+      }
+
+      const reportData = data.data;
+      let html = '';
+
+      // Check if it's a sales report with pump gains
+      if (reportData.summary && reportData.pumpGains) {
+        html += renderSalesReport(reportData);
+      }
+      // Check if it's profit/loss summary (has summary with totalRevenue)
+      else if (reportData.summary && reportData.summary.totalRevenue !== undefined) {
+        html += renderProfitLossReport(reportData);
+      }
+      // Check if it's pump performance (array of pump performance objects, including empty arrays)
+      else if (Array.isArray(reportData)) {
+        html += renderPumpPerformanceReport({ pumpPerformance: reportData });
+      }
+      // Check if it's pump performance (object with pumpPerformance property)
+      else if (reportData.pumpPerformance) {
+        html += renderPumpPerformanceReport(reportData);
+      }
+      // Check if it's activity report
+      else if (reportData.activities !== undefined) {
+        html += renderActivityReport(reportData);
+      }
+      // Check if it's inventory report (has tanks, pumps, or products)
+      else if (reportData.tanks || reportData.pumps || reportData.products) {
+        html += renderInventoryReport(reportData);
+      }
+      // Check if it's executive summary (has financials)
+      else if (reportData.financials) {
+        html += renderExecutiveSummaryReport(reportData);
+      }
+      // Fallback to JSON
+      else {
+        html = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+      }
+
+      contentDiv.innerHTML = html;
+    }
+
+    function renderSalesReport(data) {
+      const summary = data.summary;
+      const pumpGains = data.pumpGains || [];
+      const productGains = data.productGains || [];
+      
+      let html = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Sales</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${summary.totalSales || 0}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Revenue</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">₦${(summary.totalRevenue || 0).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Litres Sold</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${(summary.totalLitresSold || 0).toLocaleString()}L</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Gain</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">₦${(summary.totalGain || 0).toLocaleString()}</p>
+          </div>
+        </div>
+      `;
+
+      if (pumpGains.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Pump Performance</h4>';
+        html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>Pump</th><th>Product</th><th>Sales</th><th>Litres</th><th>Revenue</th><th>Cost</th><th>Gain</th><th>Gain %</th></tr></thead><tbody>';
+        pumpGains.forEach(pump => {
+          html += `
+            <tr>
+              <td>${pump.pumpNumber}</td>
+              <td>${pump.productName}</td>
+              <td>${pump.sales}</td>
+              <td>${pump.litresSold.toLocaleString()}</td>
+              <td>₦${pump.revenue.toLocaleString()}</td>
+              <td>₦${pump.cost.toLocaleString()}</td>
+              <td>₦${pump.gain.toLocaleString()}</td>
+              <td>${pump.gainPercentage.toFixed(2)}%</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      if (productGains.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Product Performance</h4>';
+        html += '<table class="data-table"><thead><tr><th>Product</th><th>Code</th><th>Sales</th><th>Litres</th><th>Revenue</th><th>Cost</th><th>Gain</th><th>Gain %</th></tr></thead><tbody>';
+        productGains.forEach(product => {
+          html += `
+            <tr>
+              <td>${product.productName}</td>
+              <td>${product.productCode}</td>
+              <td>${product.sales}</td>
+              <td>${product.litresSold.toLocaleString()}</td>
+              <td>₦${product.revenue.toLocaleString()}</td>
+              <td>₦${product.cost.toLocaleString()}</td>
+              <td>₦${product.gain.toLocaleString()}</td>
+              <td>${product.gainPercentage.toFixed(2)}%</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      return html;
+    }
+
+    function renderProfitLossReport(data) {
+      const summary = data.summary || {};
+      
+      let html = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Revenue</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">₦${(summary.totalRevenue || 0).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Cost</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-danger);">₦${((summary.totalCostOfGoods || 0) + (summary.totalExpenses || 0)).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Gross Profit</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">₦${(summary.grossProfit || 0).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Net Profit</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">₦${(summary.netProfit || 0).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Profit Margin</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${(summary.profitMargin || 0).toFixed(2)}%</p>
+          </div>
+        </div>
+      `;
+
+      if (data.pumpPerformance && data.pumpPerformance.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Pump Performance</h4>';
+        html += '<table class="data-table"><thead><tr><th>Pump</th><th>Sales</th><th>Litres</th><th>Revenue</th><th>Profit</th></tr></thead><tbody>';
+        data.pumpPerformance.forEach(pump => {
+          html += `
+            <tr>
+              <td>${pump.pumpNumber}</td>
+              <td>${pump.sales}</td>
+              <td>${pump.litresSold.toLocaleString()}</td>
+              <td>₦${pump.revenue.toLocaleString()}</td>
+              <td>₦${pump.profit.toLocaleString()}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      return html;
+    }
+
+    function renderPumpPerformanceReport(data) {
+      const pumpPerformance = data.pumpPerformance || [];
+      
+      let html = '';
+      
+      if (pumpPerformance.length === 0) {
+        html = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No pump performance data found for the selected date range.</p>';
+        return html;
+      }
+
+      html += '<table class="data-table"><thead><tr><th>Pump</th><th>Product</th><th>Sales</th><th>Litres Sold</th><th>Revenue</th><th>Cost</th><th>Profit</th></tr></thead><tbody>';
+      pumpPerformance.forEach(pump => {
+        html += `
+          <tr>
+            <td>${pump.pumpNumber || pump.pumpId || 'N/A'}</td>
+            <td>${pump.productName || 'N/A'}</td>
+            <td>${pump.sales || pump.totalSales || 0}</td>
+            <td>${(pump.litresSold || pump.totalLitresSold || 0).toLocaleString()}</td>
+            <td>₦${(pump.revenue || pump.totalRevenue || 0).toLocaleString()}</td>
+            <td>₦${(pump.cost || pump.totalCost || 0).toLocaleString()}</td>
+            <td>₦${(pump.profit || pump.totalProfit || 0).toLocaleString()}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+
+      return html;
+    }
+
+    function renderActivityReport(data) {
+      const activities = data.activities || [];
+      const actionStats = data.actionStats || {};
+      const userStats = data.userStats || {};
+      
+      let html = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Activities</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${data.totalActivities || 0}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Unique Actions</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">${Object.keys(actionStats).length}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Active Users</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${Object.keys(userStats).length}</p>
+          </div>
+        </div>
+      `;
+
+      if (Object.keys(actionStats).length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Action Statistics</h4>';
+        html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>Action</th><th>Count</th></tr></thead><tbody>';
+        Object.entries(actionStats).forEach(([action, count]) => {
+          html += `
+            <tr>
+              <td>${action}</td>
+              <td>${count}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      if (Object.keys(userStats).length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">User Statistics</h4>';
+        html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>User</th><th>Activity Count</th></tr></thead><tbody>';
+        Object.entries(userStats).forEach(([userId, stats]) => {
+          html += `
+            <tr>
+              <td>${stats.userName || 'N/A'}</td>
+              <td>${stats.count}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      if (activities.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Recent Activities</h4>';
+        html += '<table class="data-table"><thead><tr><th>Timestamp</th><th>Action</th><th>User</th><th>Description</th></tr></thead><tbody>';
+        activities.forEach(activity => {
+          html += `
+            <tr>
+              <td>${new Date(activity.timestamp).toLocaleString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}</td>
+              <td>${activity.action}</td>
+              <td>${activity.userName || activity.userId?.fullName || 'N/A'}</td>
+              <td>${activity.description || 'N/A'}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      } else {
+        html += '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">No activities found for the selected date range.</p>';
+      }
+
+      return html;
+    }
+
+    function renderInventoryReport(data) {
+      const tanks = data.tanks || [];
+      const pumps = data.pumps || [];
+      const products = data.products || [];
+      
+      let html = '';
+
+      if (tanks.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Tank Inventory</h4>';
+        html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>Tank</th><th>Product</th><th>Capacity</th><th>Current Stock</th><th>Percentage</th><th>Status</th></tr></thead><tbody>';
+        tanks.forEach(tank => {
+          const statusColor = tank.status === 'Critical' ? 'var(--accent-danger)' : 
+                              tank.status === 'High' ? 'var(--accent-warning)' : 
+                              tank.status === 'Low' ? 'var(--accent-warning)' : 'var(--accent-success)';
+          html += `
+            <tr>
+              <td>${tank.name}</td>
+              <td>${tank.product}</td>
+              <td>${tank.capacity.toLocaleString()}L</td>
+              <td>${tank.currentStock.toLocaleString()}L</td>
+              <td>${tank.percentage}%</td>
+              <td style="color: ${statusColor}; font-weight: bold;">${tank.status}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      if (pumps.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Pump Status</h4>';
+        html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>Pump</th><th>Product</th><th>Tank</th><th>Status</th><th>Meter Reading</th></tr></thead><tbody>';
+        pumps.forEach(pump => {
+          const statusColor = pump.status === 'Active' ? 'var(--accent-success)' : 'var(--accent-danger)';
+          html += `
+            <tr>
+              <td>${pump.pumpNumber}</td>
+              <td>${pump.product}</td>
+              <td>${pump.tank}</td>
+              <td style="color: ${statusColor}; font-weight: bold;">${pump.status}</td>
+              <td>${pump.currentMeterReading.toLocaleString()}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      if (products.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Product Information</h4>';
+        html += '<table class="data-table"><thead><tr><th>Product</th><th>Code</th><th>Selling Price</th><th>Cost Price</th><th>Profit Margin</th></tr></thead><tbody>';
+        products.forEach(product => {
+          html += `
+            <tr>
+              <td>${product.name}</td>
+              <td>${product.code}</td>
+              <td>₦${product.sellingPrice.toLocaleString()}</td>
+              <td>₦${product.costPrice.toLocaleString()}</td>
+              <td>${product.profitMargin}%</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      return html;
+    }
+
+    function renderExecutiveSummaryReport(data) {
+      const financials = data.financials || {};
+      const operations = data.operations || {};
+      const topPumps = data.topPumps || [];
+      
+      let html = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Revenue</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">₦${(financials.totalRevenue || 0).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Net Profit</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">₦${(financials.netProfit || 0).toLocaleString()}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Sales</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${operations.totalSales || 0}</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Profit Margin</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">${(financials.profitMargin || 0).toFixed(2)}%</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Total Litres Sold</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-primary);">${(operations.totalLitresSold || 0).toLocaleString()}L</p>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 12px;">
+            <h4 style="color: var(--text-secondary); font-size: 0.9rem;">Average Sale Value</h4>
+            <p style="font-size: 1.5rem; font-weight: bold; color: var(--accent-success);">₦${(data.averageSaleValue || 0).toLocaleString()}</p>
+          </div>
+        </div>
+      `;
+
+      html += '<h4 style="margin-bottom: 1rem;">Financial Summary</h4>';
+      html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+      html += `<tr><td>Gross Profit</td><td>₦${(financials.grossProfit || 0).toLocaleString()}</td></tr>`;
+      html += `<tr><td>Total Fuel Cost</td><td>₦${(financials.totalFuelCost || 0).toLocaleString()}</td></tr>`;
+      html += `<tr><td>Total Expenses</td><td>₦${(financials.totalExpenses || 0).toLocaleString()}</td></tr>`;
+      html += '</tbody></table>';
+
+      html += '<h4 style="margin-bottom: 1rem;">Operations Summary</h4>';
+      html += '<table class="data-table" style="margin-bottom: 2rem;"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+      html += `<tr><td>Total Deliveries</td><td>${operations.totalDeliveries || 0}</td></tr>`;
+      html += `<tr><td>Total Litres Delivered</td><td>${(operations.totalLitresDelivered || 0).toLocaleString()}L</td></tr>`;
+      html += `<tr><td>Total Expenses Count</td><td>${operations.totalExpenses || 0}</td></tr>`;
+      html += '</tbody></table>';
+
+      if (topPumps.length > 0) {
+        html += '<h4 style="margin-bottom: 1rem;">Top Performing Pumps</h4>';
+        html += '<table class="data-table"><thead><tr><th>Pump</th><th>Sales</th><th>Litres</th><th>Revenue</th></tr></thead><tbody>';
+        topPumps.forEach(pump => {
+          html += `
+            <tr>
+              <td>${pump.pumpNumber}</td>
+              <td>${pump.sales}</td>
+              <td>${pump.litres.toLocaleString()}</td>
+              <td>₦${pump.revenue.toLocaleString()}</td>
+            </tr>
+          `;
+        });
+        html += '</tbody></table>';
+      }
+
+      return html;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link active">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Admin Panel</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="card">
+          <h3>System Statistics</h3>
+          <div id="systemStats">
+            <p>Loading statistics...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Data Management</h3>
+          <div id="dataManagementStats">
+            <p>Loading data management statistics...</p>
+          </div>
+          <div style="margin-top: 1rem;">
+            <button onclick="openDataManagement()" class="btn btn-primary">Open Data Management</button>
+          </div>
+        </div>
+
+        <div class="form-card danger-zone">
+          <h3>⚠️ Danger Zone</h3>
+          <p><strong>Database Reset</strong> - This will delete ALL data except admin users. This action cannot be undone!</p>
+          <button onclick="resetDatabase()" class="btn btn-danger">Reset Database</button>
+        </div>
+
+        <div class="card">
+          <h3>Backup Database</h3>
+          <button onclick="backupDatabase()" class="btn btn-primary">Download Backup</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function loadSystemStats() {
+      try {
+        const res = await fetch('http://localhost:5000/api/admin/stats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('systemStats').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+              <div class="stat-card">
+                <h4>Users</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.users}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Sales</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.sales}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Deliveries</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.deliveries}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Tanks</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.tanks}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Pumps</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.pumps}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Products</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.products}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Staff</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.staff}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Customers</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.customers}</p>
+              </div>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading stats:', err);
+        document.getElementById('systemStats').innerHTML = '<p>Error loading statistics</p>';
+      }
+    }
+
+    async function loadDataManagementStats() {
+      try {
+        const res = await fetch('http://localhost:5000/api/data-management/stats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('dataManagementStats').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+              <div class="stat-card">
+                <h4>Activity Logs</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.activityLogs}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Profit/Loss Records</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.profitLossRecords}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Daily Summaries</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.dailySummaries}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Locked Records</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.lockedRecords}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Deleted Records</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${data.data.deletedRecords}</p>
+              </div>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading data management stats:', err);
+        document.getElementById('dataManagementStats').innerHTML = '<p>Error loading data management statistics</p>';
+      }
+    }
+
+    function openDataManagement() {
+      window.open('data-management.html', '_blank');
+    }
+
+    async function resetDatabase() {
+      if (!confirm('⚠️ WARNING: This will delete ALL data except admin users. This action cannot be undone!\n\nAre you absolutely sure you want to proceed?')) {
+        return;
+      }
+      
+      if (!confirm('⚠️ FINAL WARNING: All sales, deliveries, tanks, pumps, products, staff, customers, and other data will be permanently deleted.\n\nType "RESET" to confirm this action.')) {
+        return;
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/admin/reset', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('✅ Database reset successfully! You will need to re-seed the database.');
+          loadSystemStats();
+        } else {
+          alert('❌ Error: ' + (data.message || 'Failed to reset database'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Error: ' + err.message);
+      }
+    }
+
+    async function backupDatabase() {
+      try {
+        const res = await fetch('http://localhost:5000/api/admin/backup', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `fueltrack-backup-${new Date().toISOString().split('T')[0]}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+          alert('✅ Backup downloaded successfully!');
+        } else {
+          alert('❌ Error: ' + (data.message || 'Failed to create backup'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('❌ Error: ' + err.message);
+      }
+    }
+
+    loadSystemStats();
+    loadDataManagementStats();
+  </script>
+</body>
+</html>

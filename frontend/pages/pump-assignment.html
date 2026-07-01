@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Pump Assignment | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link active">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Pump Attendant Assignment</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="form-card">
+          <h3>Assign Attendant to Pump</h3>
+          <form id="assignmentForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Select Pump</label>
+                <select id="pumpSelect" required>
+                  <option value="">Select Pump</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Select Attendant</label>
+                <select id="attendantSelect" required>
+                  <option value="">Select Attendant</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Shift</label>
+              <select id="shiftSelect" required>
+                <option value="Morning">Morning (6AM - 2PM)</option>
+                <option value="Afternoon">Afternoon (2PM - 10PM)</option>
+                <option value="Night">Night (10PM - 6AM)</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Assign Attendant</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Current Pump Assignments</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Pump</th>
+                <th>Product</th>
+                <th>Tank</th>
+                <th>Assigned Attendant</th>
+                <th>Shift</th>
+                <th>Assignment Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="assignmentTable"><tr><td colspan="7">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function loadPumps() {
+      try {
+        const res = await fetch('http://localhost:5000/api/inventory/pumps', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          document.getElementById('pumpSelect').innerHTML = '<option value="">Select Pump</option>' + 
+            data.data.map(p => `<option value="${p._id}">${p.pumpNumber} (${p.product?.name || 'N/A'}) - ₦${p.product?.sellingPrice || 0}/L</option>`).join('');
+        }
+      } catch (err) {
+        console.error('Error loading pumps:', err);
+      }
+    }
+
+    async function loadStaff() {
+      try {
+        const res = await fetch('http://localhost:5000/api/staff', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok && data.data) {
+          document.getElementById('attendantSelect').innerHTML = '<option value="">Select Attendant</option>' + 
+            data.data.filter(s => s.position === 'Attendant').map(s => `<option value="${s._id}">${s.fullName}</option>`).join('');
+        }
+      } catch (err) {
+        console.error('Error loading staff:', err);
+      }
+    }
+
+    async function loadAssignments() {
+      try {
+        const res = await fetch('http://localhost:5000/api/pumps/', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const tbody = document.getElementById('assignmentTable');
+        if (res.ok && data.data) {
+          tbody.innerHTML = data.data.map(p => `
+            <tr>
+              <td>${p.pumpNumber}</td>
+              <td>${p.product?.name || 'N/A'}</td>
+              <td>${p.tank?.name || 'N/A'}</td>
+              <td>${p.assignedAttendant ? p.assignedAttendant.fullName : 'Not Assigned'}</td>
+              <td>${p.assignmentShift || 'N/A'}</td>
+              <td>${p.assignmentDate ? new Date(p.assignmentDate).toLocaleDateString('en-NG', { timeZone: 'Africa/Lagos', year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}</td>
+              <td>
+                ${p.assignedAttendant ? `<button onclick="clearAssignment('${p._id}')" class="btn btn-sm btn-danger">Clear</button>` : '-'}
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          tbody.innerHTML = '<tr><td colspan="7">No assignments found</td></tr>';
+        }
+      } catch (err) {
+        console.error('Error loading assignments:', err);
+        document.getElementById('assignmentTable').innerHTML = '<tr><td colspan="7">Error loading assignments</td></tr>';
+      }
+    }
+
+    document.getElementById('assignmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        pumpId: document.getElementById('pumpSelect').value,
+        attendantId: document.getElementById('attendantSelect').value,
+        shift: document.getElementById('shiftSelect').value
+      };
+
+      try {
+        const res = await fetch('http://localhost:5000/api/pumps/assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('Attendant assigned successfully!');
+          e.target.reset();
+          loadAssignments();
+        } else {
+          alert('Error: ' + (data.message || 'Failed to assign attendant'));
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      }
+    });
+
+    async function clearAssignment(pumpId) {
+      if (!confirm('Are you sure you want to clear this assignment?')) return;
+      try {
+        const res = await fetch(`http://localhost:5000/api/pumps/clear/${pumpId}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          alert('Assignment cleared successfully');
+          loadAssignments();
+        } else {
+          alert('Failed to clear assignment');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      }
+    }
+
+    loadPumps();
+    loadStaff();
+    loadAssignments();
+  </script>
+</body>
+</html>

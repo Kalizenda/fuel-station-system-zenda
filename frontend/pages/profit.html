@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Profit | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link active">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Profit Analytics</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="card">
+          <h3>Today's Profit</h3>
+          <p id="profitData">Loading...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    async function loadProfit() {
+      const token = localStorage.getItem('token');
+      console.log('Loading profit data...');
+      try {
+        const res = await fetch('http://localhost:5000/api/finance/profit', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        console.log('Profit API response status:', res.status);
+        const data = await res.json();
+        console.log('Profit data received:', data);
+        if (!res.ok) throw new Error(data.message || 'Failed to load profit data');
+        document.getElementById('profitData').innerHTML = `
+          <p>Revenue: ₦${data.data.totalRevenue.toLocaleString()}</p>
+          <p>Expenses: ₦${data.data.totalExpenses.toLocaleString()}</p>
+          <p><strong>Net Profit: ₦${data.data.netProfit.toLocaleString()}</strong></p>
+        `;
+      } catch (err) { 
+        console.error('Error loading profit:', err);
+        document.getElementById('profitData').textContent = 'Error loading data: ' + err.message; 
+      }
+    }
+    loadProfit();
+  </script>
+</body>
+</html>

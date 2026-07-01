@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <title>Analytics Dashboard | AJ JASPER OIL AND GAS</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="logo">⛽ AJ JASPER OIL AND GAS</div>
+      <nav class="nav-menu">
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="deliveries.html" class="nav-link">🚛 Deliveries</a>
+        <a href="sales.html" class="nav-link">💰 Sales</a>
+        <a href="customers.html" class="nav-link">👤 Customers</a>
+        <a href="tanks.html" class="nav-link">🛢️ Tanks</a>
+        <a href="prices.html" class="nav-link">💲 Prices</a>
+        <a href="pump-assignment.html" class="nav-link">⛽ Pump Assignment</a>
+        <a href="profit.html" class="nav-link">📈 Profit</a>
+        <a href="staff.html" class="nav-link">👥 Staff</a>
+        <a href="admin.html" class="nav-link">⚙️ Admin</a>
+        <a href="reports.html" class="nav-link">📄 Reports</a>
+        <a href="analytics.html" class="nav-link active">📉 Analytics</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="top-bar">
+        <h2>Analytics Dashboard</h2>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="theme-switcher">
+            <button id="themeLight" class="theme-btn" data-theme="light" title="Light Mode">☀️</button>
+            <button id="themeDark" class="theme-btn" data-theme="dark" title="Dark Mode">🌙</button>
+            <button id="themeColored" class="theme-btn" data-theme="colored" title="Colored Mode">🎨</button>
+          </div>
+          <span id="userName">Admin</span>
+        </div>
+      </header>
+      <div class="content-area">
+        <div class="card">
+          <h3>Period Selection</h3>
+          <div class="form-group">
+            <label>Select Period</label>
+            <select id="analyticsPeriod" onchange="loadAnalytics()">
+              <option value="DAILY">Daily</option>
+              <option value="WEEKLY">Weekly</option>
+              <option value="MONTHLY">Monthly</option>
+              <option value="YEARLY">Yearly</option>
+              <option value="CUMULATIVE">Cumulative</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Financial Overview</h3>
+          <div id="financialOverview">
+            <p>Loading financial data...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Pump Performance</h3>
+          <div id="pumpPerformance">
+            <p>Loading pump performance...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Product Performance</h3>
+          <div id="productPerformance">
+            <p>Loading product performance...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Activity Summary</h3>
+          <div id="activitySummary">
+            <p>Loading activity summary...</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Loss Tracking</h3>
+          <div id="lossTracking">
+            <p>Loading loss data...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="../js/guard.js"></script>
+  <script src="../js/theme-switcher.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+
+    async function loadAnalytics() {
+      const period = document.getElementById('analyticsPeriod').value;
+      
+      // Load financial overview
+      loadFinancialOverview(period);
+      
+      // Load pump performance
+      loadPumpPerformance(period);
+      
+      // Load product performance
+      loadProductPerformance(period);
+      
+      // Load activity summary
+      loadActivitySummary();
+      
+      // Load loss tracking
+      loadLossTracking(period);
+    }
+
+    async function loadFinancialOverview(period) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/profit-loss/summary?period=${period}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          document.getElementById('financialOverview').innerHTML = `<p style="color: red;">Error: ${error.message || 'Failed to load financial data. Please log in again.'}</p>`;
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (data.success && data.data.summary) {
+          const summary = data.data.summary;
+          document.getElementById('financialOverview').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              <div class="stat-card">
+                <h4>Total Revenue</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${(summary.totalRevenue || 0).toLocaleString()}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Total Cost</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${((summary.totalCostOfGoods || 0) + (summary.totalExpenses || 0)).toLocaleString()}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Gross Profit</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${(summary.grossProfit || 0).toLocaleString()}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Net Profit</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${(summary.netProfit || 0).toLocaleString()}</p>
+              </div>
+              <div class="stat-card">
+                <h4>Profit Margin</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${(summary.profitMargin || 0).toFixed(2)}%</p>
+              </div>
+              <div class="stat-card">
+                <h4>Total Loss</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${(summary.totalLoss || 0).toLocaleString()}</p>
+              </div>
+            </div>
+            <div style="margin-top: 1rem;">
+              <p><strong>Total Sales:</strong> ${summary.totalSales || 0}</p>
+              <p><strong>Total Litres Sold:</strong> ${(summary.totalLitresSold || 0).toLocaleString()}L</p>
+              <p><strong>Total Deliveries:</strong> ${summary.totalDeliveries || 0}</p>
+              <p><strong>Total Litres Delivered:</strong> ${(summary.totalLitresDelivered || 0).toLocaleString()}L</p>
+            </div>
+          `;
+        } else {
+          document.getElementById('financialOverview').innerHTML = '<p style="color: orange;">No financial data available for this period.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading financial overview:', err);
+        document.getElementById('financialOverview').innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      }
+    }
+
+    async function loadPumpPerformance(period) {
+      try {
+        const res = await fetch('http://localhost:5000/api/profit-loss/pump-performance', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          document.getElementById('pumpPerformance').innerHTML = `<p style="color: red;">Error: ${error.message || 'Failed to load pump performance. Please log in again.'}</p>`;
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+          const pumps = data.data;
+          if (!pumps || pumps.length === 0) {
+            document.getElementById('pumpPerformance').innerHTML = '<p style="color: orange;">No pump performance data available.</p>';
+            return;
+          }
+          document.getElementById('pumpPerformance').innerHTML = `
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Pump</th>
+                  <th>Product</th>
+                  <th>Sales</th>
+                  <th>Litres</th>
+                  <th>Revenue</th>
+                  <th>Cost</th>
+                  <th>Gain</th>
+                  <th>Gain/Litre</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${pumps.map(p => `
+                  <tr>
+                    <td>${p.pumpNumber || 'N/A'}</td>
+                    <td>${p.productName || 'N/A'}</td>
+                    <td>${p.totalSales || 0}</td>
+                    <td>${(p.totalLitresSold || 0).toLocaleString()}</td>
+                    <td>₦${(p.totalRevenue || 0).toLocaleString()}</td>
+                    <td>₦${(p.totalCost || 0).toLocaleString()}</td>
+                    <td style="color: ${(p.totalProfit || 0) >= 0 ? 'green' : 'red'};">₦${(p.totalProfit || 0).toLocaleString()}</td>
+                    <td>₦${(p.averageProfitPerLitre || 0).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } else {
+          document.getElementById('pumpPerformance').innerHTML = '<p style="color: orange;">No pump performance data available.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading pump performance:', err);
+        document.getElementById('pumpPerformance').innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      }
+    }
+
+    async function loadProductPerformance(period) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/profit-loss/summary?period=${period}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          document.getElementById('productPerformance').innerHTML = `<p style="color: red;">Error: ${error.message || 'Failed to load product performance. Please log in again.'}</p>`;
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (data.success && data.data.summary && data.data.summary.productPerformance) {
+          const products = data.data.summary.productPerformance;
+          if (!products || products.length === 0) {
+            document.getElementById('productPerformance').innerHTML = '<p style="color: orange;">No product performance data available.</p>';
+            return;
+          }
+          document.getElementById('productPerformance').innerHTML = `
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Code</th>
+                  <th>Sales</th>
+                  <th>Litres</th>
+                  <th>Revenue</th>
+                  <th>Cost</th>
+                  <th>Profit</th>
+                  <th>Margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${products.map(p => `
+                  <tr>
+                    <td>${p.productName || 'N/A'}</td>
+                    <td>${p.productCode || 'N/A'}</td>
+                    <td>${p.sales || 0}</td>
+                    <td>${(p.litresSold || 0).toLocaleString()}</td>
+                    <td>₦${(p.revenue || 0).toLocaleString()}</td>
+                    <td>₦${(p.cost || 0).toLocaleString()}</td>
+                    <td style="color: ${(p.profit || 0) >= 0 ? 'green' : 'red'};">₦${(p.profit || 0).toLocaleString()}</td>
+                    <td>${(p.profitMargin || 0).toFixed(2)}%</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        } else {
+          document.getElementById('productPerformance').innerHTML = '<p style="color: orange;">No product performance data available.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading product performance:', err);
+        document.getElementById('productPerformance').innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      }
+    }
+
+    async function loadActivitySummary() {
+      try {
+        const res = await fetch('http://localhost:5000/api/activity-logs/statistics', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          document.getElementById('activitySummary').innerHTML = `<p style="color: red;">Error: ${error.message || 'Failed to load activity summary. Please log in again.'}</p>`;
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (data.success && data.data) {
+          const stats = data.data;
+          if (!stats) {
+            document.getElementById('activitySummary').innerHTML = '<p style="color: orange;">No activity data available.</p>';
+            return;
+          }
+          document.getElementById('activitySummary').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              <div class="stat-card">
+                <h4>Total Activities</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">${stats.totalActivities || 0}</p>
+              </div>
+            </div>
+            ${stats.actionStats && stats.actionStats.length > 0 ? `
+            <div style="margin-top: 1rem;">
+              <h4>Action Breakdown</h4>
+              <ul>
+                ${stats.actionStats.map(stat => `
+                  <li>${stat._id || 'Unknown'}: ${stat.count || 0}</li>
+                `).join('')}
+              </ul>
+            </div>
+            ` : ''}
+          `;
+        } else {
+          document.getElementById('activitySummary').innerHTML = '<p style="color: orange;">No activity data available.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading activity summary:', err);
+        document.getElementById('activitySummary').innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      }
+    }
+
+    async function loadLossTracking(period) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/profit-loss/summary?period=${period}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({}));
+          document.getElementById('lossTracking').innerHTML = `<p style="color: red;">Error: ${error.message || 'Failed to load loss tracking. Please log in again.'}</p>`;
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (data.success && data.data.summary) {
+          const summary = data.data.summary;
+          if (!summary) {
+            document.getElementById('lossTracking').innerHTML = '<p style="color: orange;">No loss data available.</p>';
+            return;
+          }
+          document.getElementById('lossTracking').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+              <div style="background: #ffebee; padding: 1rem; border-radius: 8px;">
+                <h4>Total Loss</h4>
+                <p style="font-size: 1.5rem; font-weight: bold;">₦${(summary.totalLoss || 0).toLocaleString()}</p>
+              </div>
+            </div>
+            <p style="margin-top: 1rem;"><strong>Note:</strong> Detailed loss tracking will be implemented with activity logging integration.</p>
+          `;
+        } else {
+          document.getElementById('lossTracking').innerHTML = '<p style="color: orange;">No loss data available.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading loss tracking:', err);
+        document.getElementById('lossTracking').innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+      }
+    }
+
+    // Load analytics on page load
+    loadAnalytics();
+  </script>
+</body>
+</html>

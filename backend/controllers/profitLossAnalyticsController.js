@@ -309,8 +309,16 @@ exports.getPumpPerformance = async (req, res) => {
     
     if (startDate || endDate) {
       matchQuery.date = {};
-      if (startDate) matchQuery.date.$gte = new Date(startDate);
-      if (endDate) matchQuery.date.$lte = new Date(endDate);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchQuery.date.$gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchQuery.date.$lte = end;
+      }
     }
     
     const profitLossData = await ProfitLoss.find(matchQuery)

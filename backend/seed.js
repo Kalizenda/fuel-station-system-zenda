@@ -89,7 +89,8 @@ const seed = async () => {
     const suppliers = [
       { name: 'Dangote Oil & Gas', contactPerson: 'Mr. Okonkwo', phone: '08012345678', email: 'contact@dangote.com', productTypes: ['PMS', 'AGO', 'DPK'] },
       { name: 'Shell Nigeria', contactPerson: 'Mr. Adeyemi', phone: '08087654321', email: 'contact@shell.com.ng', productTypes: ['PMS', 'AGO'] },
-      { name: 'Mobil Nigeria', contactPerson: 'Miss Chioma', phone: '08098765432', email: 'contact@mobil.com.ng', productTypes: ['DPK', 'PMS'] }
+      { name: 'Mobil Nigeria', contactPerson: 'Miss Chioma', phone: '08098765432', email: 'contact@mobil.com.ng', productTypes: ['DPK', 'PMS'] },
+      { name: 'NNPC', contactPerson: 'Mr. Ibrahim', phone: '08055555555', email: 'contact@nnpc.gov.ng', productTypes: ['PMS', 'AGO', 'DPK'] }
     ];
 
     for (const s of suppliers) {
